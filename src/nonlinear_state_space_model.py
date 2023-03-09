@@ -16,19 +16,26 @@ class StateSpaceModel:
 
         # state equation
         self.f = StateSpaceModel.F(self)
+        print(self.f.shape)
+
+    def Evaluate(self, state_numerical, input_numerical):
+        lambda_f = sm.utilities.lambdify([self.states, self.inputs], self.f)
+        f_evaluated = lambda_f(state_numerical, input_numerical)
+        return f_evaluated
 
     def F(self):
-        f = sm.Matrix([0, 0, 0, 0, 0, 0])
+        f1 = sm.Matrix([self.states[3], self.states[4], self.states[5]])
+        f2 = sm.Matrix([0, 0, -9.81])
         attachment_points = config.attachment_points
-        print(attachment_points[0:3])
         for n, cable_tension in enumerate(self.inputs):
-            f += StateSpaceModel.Force(self, cable_tension, attachment_points[n][0:3])
+            f2 += StateSpaceModel.Force(self, cable_tension, attachment_points[n][0:3])
+
+        f = sm.Matrix([f1,f2])
         return f
 
     def Force(self, cable_tension, cable_attachment_point):
-        location = sm.Matrix(self.states[0:3])
-        print(cable_attachment_point)
-        center_of_mass_to_attachment_point = cable_attachment_point - location
+        location = sm.Matrix([self.states[0], self.states[1], self.states[2]])
+        center_of_mass_to_attachment_point = sm.Matrix([cable_attachment_point]).T - location
         unit_vector = center_of_mass_to_attachment_point/(sm.sqrt(center_of_mass_to_attachment_point.dot(center_of_mass_to_attachment_point)))
         force = unit_vector*cable_tension
         return force
