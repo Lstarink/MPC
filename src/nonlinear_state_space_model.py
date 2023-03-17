@@ -3,17 +3,20 @@ import math as mt
 import numpy as np
 import config
 import scipy as sp
+import warnings
+import control
 
 
 class StateSpaceModel:
-    def __init__(self):
-        x, y, z, x_dot, y_dot, z_dot = sm.symbols("x, y, z, x_dot, y_dot, z_dot")
+    def __init__(self, dt=0.1):
 
+        self.dt = dt
         # states
+        x, y, z, x_dot, y_dot, z_dot = sm.symbols("x, y, z, x_dot, y_dot, z_dot")
         self.statesym = sm.Matrix([x, y, z, x_dot, y_dot, z_dot])
 
-        c1, c2, c3, c4, c5, c6, c7, c8 = sm.symbols("c1, c2, c3, c4, c5, c6, c7, c8")
         # inputs
+        c1, c2, c3, c4, c5, c6, c7, c8 = sm.symbols("c1, c2, c3, c4, c5, c6, c7, c8")
         self.inputs = sm.Matrix([c1, c2, c3, c4, c5, c6, c7, c8]).T
 
         self.n = len(self.statesym)
@@ -29,11 +32,13 @@ class StateSpaceModel:
         self.B = np.zeros([self.n, self.m])
         self.C = np.identity(self.n)
         self.D = np.zeros([self.n, self.m])
+
+        self.x_eq = np.zeros(self.n)
+        self.u_eq = np.zeros(self.n)
         StateSpaceModel.Linearize(self)
 
         self.ct_statespace = sp.signal.StateSpace(self.A, self.B, self.C, self.D)
-        self.dt = 0
-        self.dt_statespace
+        self.dt_statespace = control.StateSpace(self.A, self.B, self.C, self.D, dt=self.dt)
 
 
     def NonlinearDiscreteTimeStep(self, input_n):
@@ -64,8 +69,17 @@ class StateSpaceModel:
         return f
 
     def Linearize(self, x_eq=np.zeros(6), u_eq=np.zeros(8)):
+        f_eq =  StateSpaceModel.EvaluateNonlinear(self, x_eq, u_eq)
+
+        try:
+            np.testing.assert_array_equal(np.zeros(self.n), f_eq[:,0])
+        except AssertionError:
+            warnings.warn('The point you are linearizing around is not an equilibrium\n')
+
         self.A = self.lambdaA(x_eq, u_eq)
         self.B = self.lambdaB(x_eq, u_eq)
+        self.dt_statespace = control.StateSpace(self.A, self.B, self.C, self.D, dt=self.dt)
+        self.ct_statespace = sp.signal.StateSpace(self.A, self.B, self.C, self.D)
 
 
     def LinearizeInit(self):
@@ -83,6 +97,18 @@ class StateSpaceModel:
 
         return lambda_A_, lambda_B_
 
+    def ct_sim(self, u, t, x0):
+        out = sp.signal.lsim(self.ct_statespace, u, t, X0=x0)
+        return out[1]
+
+    def dt_sim(self, u, t, x0):
+        y = np.zeros([len(t), self.n])
+        x_plus = x0
+        for n, t_n in enumerate(t):
+            x_plus = self.dt_statespace.dynamics(t_n, x_plus, u[n, :])
+            y[n, :] = x_plus
+        return y
+
     def Force(self, cable_tension, cable_attachment_point):
         location = sm.Matrix([self.statesym[0], self.statesym[1], self.statesym[2]])
         center_of_mass_to_attachment_point = sm.Matrix([cable_attachment_point]).T - location
@@ -90,13 +116,12 @@ class StateSpaceModel:
         force = unit_vector*cable_tension
         return force
 
-    def CalculatePhiGamma(self):
-        self.Phi = 0
-        self.Gamma = 0
-
     def Setdt(self, dt):
         self.dt = dt
-        StateSpaceModel.CalculatePhiGamma(self)
+        [Phi, Gamma, C, D] = sp.signal.cont2discrete(self.ct_statespace, dt)
+        print(Phi)
+        print(Gamma)
+        self.dt_statespace = sp.signal.StateSpace(Phi, Gamma, self.C, self.D, self.dt)
 
     def ResetState(self, state):
         self.state = state
