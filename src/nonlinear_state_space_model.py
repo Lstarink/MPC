@@ -4,8 +4,6 @@ import numpy as np
 import config
 import scipy as sp
 import warnings
-import control
-
 
 class StateSpaceModel:
     def __init__(self, dt=0.1):
@@ -38,7 +36,8 @@ class StateSpaceModel:
         StateSpaceModel.Linearize(self)
 
         self.ct_statespace = sp.signal.StateSpace(self.A, self.B, self.C, self.D)
-        self.dt_statespace = control.StateSpace(self.A, self.B, self.C, self.D, dt=self.dt)
+        self.dt_statespace = sp.signal.cont2discrete((self.A, self.B, self.C, self.D), self.dt)
+        # self.dt_statespace = control.StateSpace(self.Phi, self.Gamma, self.C, self.D, dt=self.dt)
 
 
     def NonlinearDiscreteTimeStep(self, input_n):
@@ -78,7 +77,7 @@ class StateSpaceModel:
 
         self.A = self.lambdaA(x_eq, u_eq)
         self.B = self.lambdaB(x_eq, u_eq)
-        self.dt_statespace = control.StateSpace(self.A, self.B, self.C, self.D, dt=self.dt)
+        self.dt_statespace = sp.signal.cont2discrete((self.A, self.B, self.C, self.D), self.dt)
         self.ct_statespace = sp.signal.StateSpace(self.A, self.B, self.C, self.D)
 
 
@@ -97,17 +96,31 @@ class StateSpaceModel:
 
         return lambda_A_, lambda_B_
 
+    def nl_sim(self, u, t, x0):
+        y = np.zeros([self.n, len(t)])
+        xn = x0
+        for n, t_n in enumerate(t):
+            y[:, n] = xn
+            dxdt = self.EvaluateNonlinear(xn, u[n])
+            xn = xn + dxdt[:, 0]*self.dt
+        return y
+
     def ct_sim(self, u, t, x0):
         out = sp.signal.lsim(self.ct_statespace, u, t, X0=x0)
         return out[1]
 
     def dt_sim(self, u, t, x0):
-        y = np.zeros([len(t), self.n])
-        x_plus = x0
-        for n, t_n in enumerate(t):
-            x_plus = self.dt_statespace.dynamics(t_n, x_plus, u[n, :])
-            y[n, :] = x_plus
-        return y
+        out = sp.signal.dlsim(self.dt_statespace, u, t, x0=x0)
+        return out[1]
+
+    def nl_tick(self, un, xn):
+        return 0
+
+    def ct_tick(self, un, xn):
+        return 0
+
+    def dt_tick(self, un, xn):
+        return 0
 
     def Force(self, cable_tension, cable_attachment_point):
         location = sm.Matrix([self.statesym[0], self.statesym[1], self.statesym[2]])
@@ -118,10 +131,7 @@ class StateSpaceModel:
 
     def Setdt(self, dt):
         self.dt = dt
-        [Phi, Gamma, C, D] = sp.signal.cont2discrete(self.ct_statespace, dt)
-        print(Phi)
-        print(Gamma)
-        self.dt_statespace = sp.signal.StateSpace(Phi, Gamma, self.C, self.D, self.dt)
+        self.dt_statespace = sp.signal.cont2discrete((self.A, self.B, self.C, self.D), self.dt)
 
     def ResetState(self, state):
         self.state = state

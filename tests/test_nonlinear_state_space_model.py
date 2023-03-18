@@ -70,29 +70,34 @@ class TestStateSpace(unittest.TestCase):
         u[1] = np.cos(t/5)
         u[2] = -np.sin(t/5)
         u[3] = -np.cos(t/5)
-        y = statespace.ct_sim(u.T, t, np.zeros(statespace.n))
-        y = np.array(y)
-        y = y.T
-        visualize.VisualizeTrajectory3D(y[:][0], y[:][1], y[:][2])
-        visualize.VisualizeStatePrograssion(y, t)
+        y1 = statespace.ct_sim(u.T, t, np.zeros(statespace.n))
+        y1 = np.array(y1)
+        y1 = y1.T
+        # visualize.VisualizeTrajectory3D(y1[:][0], y1[:][1], y1[:][2])
+        # [fig, axs] = visualize.VisualizeStatePrograssion(y1, t)
+
+
         statespace.Setdt(dt)
         y2 = statespace.dt_sim(u.T, t, np.zeros(statespace.n))
         y2 = np.array(y2)
         y2 = y2.T
         print(y2.shape)
         print(y2[:][0].shape)
-        visualize.VisualizeTrajectory3D(y2[:][0], y2[:][1], y2[:][2])
-        visualize.VisualizeStatePrograssion(y2, t)
+        # visualize.VisualizeTrajectory3D(y2[:][0], y2[:][1], y2[:][2])
+        # visualize.VisualizeStatePrograssion(y2, t)
 
-        # plt.figure()
-        # plt.plot(t, y[:][0])
-        # plt.plot(t, y[:][1])
-        # plt.plot(t, y[:][2])
-        # plt.plot(t, y[:][3])
-        # plt.plot(t, y[:][4])
-        # plt.plot(t, y[:][5])
-        #
-        # plt.show()
+        y3 = statespace.nl_sim(u.T, t, np.zeros(statespace.n))
+        print(y3.shape)
+        visualize.VisualizeStatePrograssion(y3, t)
+
+        # floatingpointerror = 1e-1
+        # self.assertIsNone(np.testing.assert_allclose(y1[:][0], y2[:][0], atol=floatingpointerror))
+        # self.assertLess(np.linalg.norm(y1[:][1] - y2[:][1]), floatingpointerror)
+        # self.assertIsNone(np.testing.assert_allclose(y1[:][1], y2[:][1], atol=floatingpointerror))
+        # self.assertIsNone(np.testing.assert_allclose(y1[:, 2], y2[:, 2], atol=floatingpointerror))
+        # self.assertIsNone(np.testing.assert_allclose(y1[:, 3], y2[:, 3], atol=floatingpointerror))
+        # self.assertIsNone(np.testing.assert_allclose(y1[:, 4], y2[:, 4], atol=floatingpointerror))
+        # self.assertIsNone(np.testing.assert_allclose(y1[:, 5], y2[:, 5], atol=floatingpointerror))
 
     # def test_ConvinceU(self):
     #     statespace = nonlinear_state_space_model.StateSpaceModel()
