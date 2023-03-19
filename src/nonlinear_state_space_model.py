@@ -32,12 +32,11 @@ class StateSpaceModel:
         self.D = np.zeros([self.n, self.m])
 
         self.x_eq = np.zeros(self.n)
-        self.u_eq = np.zeros(self.n)
-        StateSpaceModel.Linearize(self)
+        self.u_eq = np.zeros(self.m)
+        StateSpaceModel.Linearize(self, init=True)
 
         self.ct_statespace = sp.signal.StateSpace(self.A, self.B, self.C, self.D)
         self.dt_statespace = sp.signal.cont2discrete((self.A, self.B, self.C, self.D), self.dt)
-        # self.dt_statespace = control.StateSpace(self.Phi, self.Gamma, self.C, self.D, dt=self.dt)
 
 
     def NonlinearDiscreteTimeStep(self, input_n):
@@ -67,19 +66,22 @@ class StateSpaceModel:
         f = sm.Matrix([f1,f2])
         return f
 
-    def Linearize(self, x_eq=np.zeros(6), u_eq=np.zeros(8)):
-        f_eq =  StateSpaceModel.EvaluateNonlinear(self, x_eq, u_eq)
-
-        try:
-            np.testing.assert_array_equal(np.zeros(self.n), f_eq[:,0])
-        except AssertionError:
-            warnings.warn('The point you are linearizing around is not an equilibrium\n')
+    def Linearize(self, x_eq=np.zeros(6), u_eq=np.zeros(8), init=False):
+        f_eq = StateSpaceModel.EvaluateNonlinear(self, x_eq, u_eq)
+        self.u_eq = u_eq
+        self.x_eq = x_eq
+        if not init:
+            try:
+                np.testing.assert_array_equal(np.zeros(self.n), f_eq[:,0])
+            except AssertionError:
+                warnings.warn('The point you are linearizing around is not an equilibrium\n')
 
         self.A = self.lambdaA(x_eq, u_eq)
         self.B = self.lambdaB(x_eq, u_eq)
         self.dt_statespace = sp.signal.cont2discrete((self.A, self.B, self.C, self.D), self.dt)
         self.ct_statespace = sp.signal.StateSpace(self.A, self.B, self.C, self.D)
-
+        self.Phi = self.dt_statespace[0]
+        self.Gamma = self.dt_statespace[1]
 
     def LinearizeInit(self):
         A_ = sm.zeros(self.n)
@@ -114,13 +116,17 @@ class StateSpaceModel:
         return out[1]
 
     def nl_tick(self, un, xn):
-        return 0
-
-    def ct_tick(self, un, xn):
-        return 0
+        un += self.u_eq
+        xn += self.x_eq
+        dxdt = self.EvaluateNonlinear(xn, un)
+        xplus = xn + dxdt[:, 0]*self.dt
+        return xplus
 
     def dt_tick(self, un, xn):
-        return 0
+        Phi = self.dt_statespace[0]
+        Gamma = self.dt_statespace[1]
+        xplus = Phi@xn + Gamma@un
+        return xplus
 
     def Force(self, cable_tension, cable_attachment_point):
         location = sm.Matrix([self.statesym[0], self.statesym[1], self.statesym[2]])
@@ -132,6 +138,7 @@ class StateSpaceModel:
     def Setdt(self, dt):
         self.dt = dt
         self.dt_statespace = sp.signal.cont2discrete((self.A, self.B, self.C, self.D), self.dt)
-
+        self.Phi = self.dt_statespace[0]
+        self.Gamma = self.dt_statespace[1]
     def ResetState(self, state):
         self.state = state

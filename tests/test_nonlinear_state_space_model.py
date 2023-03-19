@@ -63,32 +63,50 @@ class TestStateSpace(unittest.TestCase):
         u_eq = np.array([0, f_eq, 0, f_eq, 0, f_eq, 0, f_eq])
         statespace.Linearize(u_eq=u_eq)
         dt = 0.01
-        t = np.arange(0, 10, dt)
+        t = np.arange(0, 1, dt)
         N = len(t)
         u = np.zeros([statespace.m, N])
         u[0] = np.sin(t/5)
         u[1] = np.cos(t/5)
         u[2] = -np.sin(t/5)
         u[3] = -np.cos(t/5)
+
+        """Continuous Time linear sim"""
         y1 = statespace.ct_sim(u.T, t, np.zeros(statespace.n))
         y1 = np.array(y1)
         y1 = y1.T
         # visualize.VisualizeTrajectory3D(y1[:][0], y1[:][1], y1[:][2])
-        # [fig, axs] = visualize.VisualizeStatePrograssion(y1, t)
+        # visualize.VisualizeStateProgression(y1, t)
 
-
+        """Discrete Time linear sim"""
         statespace.Setdt(dt)
         y2 = statespace.dt_sim(u.T, t, np.zeros(statespace.n))
         y2 = np.array(y2)
         y2 = y2.T
-        print(y2.shape)
-        print(y2[:][0].shape)
-        # visualize.VisualizeTrajectory3D(y2[:][0], y2[:][1], y2[:][2])
-        # visualize.VisualizeStatePrograssion(y2, t)
 
+        # visualize.VisualizeTrajectory3D(y2[:][0], y2[:][1], y2[:][2])
+        # visualize.VisualizeStateProgression(y2, t)
+
+        """Discrete time nonlinear sim"""
         y3 = statespace.nl_sim(u.T, t, np.zeros(statespace.n))
         print(y3.shape)
-        visualize.VisualizeStatePrograssion(y3, t)
+        # visualize.VisualizeStateProgression(y3, t)
+
+        """Continous time one step at a time sim"""
+
+        x0 = np.zeros(statespace.n)
+        xplus = x0
+        y4 = np.zeros([len(t), statespace.n])
+        for n, tn in enumerate(t):
+            if n == len(t)-1:
+                break
+            xplus = statespace.dt_tick(u[:, n], xplus)
+            y4[n+1, :] = xplus
+
+        y4 = y4.T
+        # visualize.VisualizeStateProgression(y4, t)
+        #["ct lsim", "dt lsim", "nl sim", "dt tick lsim"]
+        # visualize.VisualizeStateProgressionMultipleSims(np.array([y1, y2, y4]), t)
 
         # floatingpointerror = 1e-1
         # self.assertIsNone(np.testing.assert_allclose(y1[:][0], y2[:][0], atol=floatingpointerror))
