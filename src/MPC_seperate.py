@@ -4,69 +4,175 @@ import casadi as ca
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-model_type = 'continuous'
-model = mpclib.do_mpc.model.Model(model_type)
 
-#Set the states
-x = model.set_variable(var_type='_x', var_name='x', shape=(1, 1))
-y = model.set_variable(var_type='_x', var_name='y', shape=(1, 1))
-z = model.set_variable(var_type='_x', var_name='z', shape=(1, 1))
-x_dot = model.set_variable(var_type='_x', var_name='x_dot', shape=(1, 1))
-y_dot = model.set_variable(var_type='_x', var_name='y_dot', shape=(1, 1))
-z_dot = model.set_variable(var_type='_x', var_name='z_dot', shape=(1, 1))
+def InitMPC(horizon, dt):
+    def tvp_fun(tnow):
+        n_horizon = 20
+        dt = 0.1
+        for k in range(n_horizon + 1):
+            tvp_template['_tvp', k, 'x_ref'] = -np.cos(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'y_ref'] = -np.sin(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'z_ref'] = -0.5
+            tvp_template['_tvp', k, 'x_dot_ref'] = 0.5*np.sin(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'y_dot_ref'] = -0.5*np.cos(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'z_dot_ref'] = 0
 
-# Set inputs
-c1 = model.set_variable(var_type='_u', var_name='c1', shape=(1, 1))
-c2 = model.set_variable(var_type='_u', var_name='c2', shape=(1, 1))
-c3 = model.set_variable(var_type='_u', var_name='c3', shape=(1, 1))
-c4 = model.set_variable(var_type='_u', var_name='c4', shape=(1, 1))
-c5 = model.set_variable(var_type='_u', var_name='c5', shape=(1, 1))
-c6 = model.set_variable(var_type='_u', var_name='c6', shape=(1, 1))
-c7 = model.set_variable(var_type='_u', var_name='c7', shape=(1, 1))
-c8 = model.set_variable(var_type='_u', var_name='c8', shape=(1, 1))
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+            tvp_template['_tvp', k, 'c1_opt'] = 0
+        return tvp_template
 
-# Set references
-x_ref = model.set_variable(var_type='_tvp', var_name='x_ref')
-y_ref = model.set_variable(var_type='_tvp', var_name='y_ref')
-z_ref = model.set_variable(var_type='_tvp', var_name='z_ref')
+    model_type = 'continuous'
+    model = mpclib.do_mpc.model.Model(model_type)
 
-model.set_rhs('x', x_dot)
-model.set_rhs('y', y_dot)
-model.set_rhs('z', z_dot)
-model.set_rhs('x_dot', c1*(1 - x)/ca.sqrt((1 - x)**2 + (1 - y)**2 + (1 - z)**2) + c2*(1 - x)/ca.sqrt((1 - x)**2 + (1 - y)**2 + (-z - 1)**2) + c3*(1 - x)/ca.sqrt((1 - x)**2 + (1 - z)**2 + (-y - 1)**2) + c4*(1 - x)/ca.sqrt((1 - x)**2 + (-y - 1)**2 + (-z - 1)**2) + c5*(-x - 1)/ca.sqrt((1 - y)**2 + (1 - z)**2 + (-x - 1)**2) + c6*(-x - 1)/ca.sqrt((1 - y)**2 + (-x - 1)**2 + (-z - 1)**2) + c7*(-x - 1)/ca.sqrt((1 - z)**2 + (-x - 1)**2 + (-y - 1)**2) + c8*(-x - 1)/ca.sqrt((-x - 1)**2 + (-y - 1)**2 + (-z - 1)**2))
-model.set_rhs('y_dot', c1*(1 - y)/ca.sqrt((1 - x)**2 + (1 - y)**2 + (1 - z)**2) + c2*(1 - y)/ca.sqrt((1 - x)**2 + (1 - y)**2 + (-z - 1)**2) + c3*(-y - 1)/ca.sqrt((1 - x)**2 + (1 - z)**2 + (-y - 1)**2) + c4*(-y - 1)/ca.sqrt((1 - x)**2 + (-y - 1)**2 + (-z - 1)**2) + c5*(1 - y)/ca.sqrt((1 - y)**2 + (1 - z)**2 + (-x - 1)**2) + c6*(1 - y)/ca.sqrt((1 - y)**2 + (-x - 1)**2 + (-z - 1)**2) + c7*(-y - 1)/ca.sqrt((1 - z)**2 + (-x - 1)**2 + (-y - 1)**2) + c8*(-y - 1)/ca.sqrt((-x - 1)**2 + (-y - 1)**2 + (-z - 1)**2))
-model.set_rhs('z_dot', c1*(1 - z)/ca.sqrt((1 - x)**2 + (1 - y)**2 + (1 - z)**2) + c2*(-z - 1)/ca.sqrt((1 - x)**2 + (1 - y)**2 + (-z - 1)**2) + c3*(1 - z)/ca.sqrt((1 - x)**2 + (1 - z)**2 + (-y - 1)**2) + c4*(-z - 1)/ca.sqrt((1 - x)**2 + (-y - 1)**2 + (-z - 1)**2) + c5*(1 - z)/ca.sqrt((1 - y)**2 + (1 - z)**2 + (-x - 1)**2) + c6*(-z - 1)/ca.sqrt((1 - y)**2 + (-x - 1)**2 + (-z - 1)**2) + c7*(1 - z)/ca.sqrt((1 - z)**2 + (-x - 1)**2 + (-y - 1)**2) + c8*(-z - 1)/ca.sqrt((-x - 1)**2 + (-y - 1)**2 + (-z - 1)**2) - 9.81)
+    # Set the states
+    x = model.set_variable(var_type='_x', var_name='x', shape=(1, 1))
+    y = model.set_variable(var_type='_x', var_name='y', shape=(1, 1))
+    z = model.set_variable(var_type='_x', var_name='z', shape=(1, 1))
+    x_dot = model.set_variable(var_type='_x', var_name='x_dot', shape=(1, 1))
+    y_dot = model.set_variable(var_type='_x', var_name='y_dot', shape=(1, 1))
+    z_dot = model.set_variable(var_type='_x', var_name='z_dot', shape=(1, 1))
 
-model.setup()
+    # Set inputs
+    c1 = model.set_variable(var_type='_u', var_name='c1', shape=(1, 1))
+    c2 = model.set_variable(var_type='_u', var_name='c2', shape=(1, 1))
+    c3 = model.set_variable(var_type='_u', var_name='c3', shape=(1, 1))
+    c4 = model.set_variable(var_type='_u', var_name='c4', shape=(1, 1))
+    c5 = model.set_variable(var_type='_u', var_name='c5', shape=(1, 1))
+    c6 = model.set_variable(var_type='_u', var_name='c6', shape=(1, 1))
+    c7 = model.set_variable(var_type='_u', var_name='c7', shape=(1, 1))
+    c8 = model.set_variable(var_type='_u', var_name='c8', shape=(1, 1))
 
-mpc = mpclib.do_mpc.controller.MPC(model)
+    # Set references
+    x_ref = model.set_variable(var_type='_tvp', var_name='x_ref')
+    y_ref = model.set_variable(var_type='_tvp', var_name='y_ref')
+    z_ref = model.set_variable(var_type='_tvp', var_name='z_ref')
+    x_dot_ref = model.set_variable(var_type='_tvp', var_name='x_dot_ref')
+    y_dot_ref = model.set_variable(var_type='_tvp', var_name='y_dot_ref')
+    z_dot_ref = model.set_variable(var_type='_tvp', var_name='z_dot_ref')
+
+    #Set optimal inputs
+    c1_opt = model.set_variable(var_type='_tvp', var_name='c1_opt')
+    c2_opt = model.set_variable(var_type='_tvp', var_name='c2_opt')
+    c3_opt = model.set_variable(var_type='_tvp', var_name='c3_opt')
+    c4_opt = model.set_variable(var_type='_tvp', var_name='c4_opt')
+    c5_opt = model.set_variable(var_type='_tvp', var_name='c5_opt')
+    c6_opt = model.set_variable(var_type='_tvp', var_name='c6_opt')
+    c7_opt = model.set_variable(var_type='_tvp', var_name='c7_opt')
+    c8_opt = model.set_variable(var_type='_tvp', var_name='c8_opt')
+
+    model.set_rhs('x', x_dot)
+    model.set_rhs('y', y_dot)
+    model.set_rhs('z', z_dot)
+    model.set_rhs('x_dot', c1 * (1 - x) / ca.sqrt((1 - x) ** 2 + (1 - y) ** 2 + (1 - z) ** 2) + c2 * (1 - x) / ca.sqrt(
+        (1 - x) ** 2 + (1 - y) ** 2 + (-z - 1) ** 2) + c3 * (1 - x) / ca.sqrt(
+        (1 - x) ** 2 + (1 - z) ** 2 + (-y - 1) ** 2) + c4 * (1 - x) / ca.sqrt(
+        (1 - x) ** 2 + (-y - 1) ** 2 + (-z - 1) ** 2) + c5 * (-x - 1) / ca.sqrt(
+        (1 - y) ** 2 + (1 - z) ** 2 + (-x - 1) ** 2) + c6 * (-x - 1) / ca.sqrt(
+        (1 - y) ** 2 + (-x - 1) ** 2 + (-z - 1) ** 2) + c7 * (-x - 1) / ca.sqrt(
+        (1 - z) ** 2 + (-x - 1) ** 2 + (-y - 1) ** 2) + c8 * (-x - 1) / ca.sqrt(
+        (-x - 1) ** 2 + (-y - 1) ** 2 + (-z - 1) ** 2))
+    model.set_rhs('y_dot', c1 * (1 - y) / ca.sqrt((1 - x) ** 2 + (1 - y) ** 2 + (1 - z) ** 2) + c2 * (1 - y) / ca.sqrt(
+        (1 - x) ** 2 + (1 - y) ** 2 + (-z - 1) ** 2) + c3 * (-y - 1) / ca.sqrt(
+        (1 - x) ** 2 + (1 - z) ** 2 + (-y - 1) ** 2) + c4 * (-y - 1) / ca.sqrt(
+        (1 - x) ** 2 + (-y - 1) ** 2 + (-z - 1) ** 2) + c5 * (1 - y) / ca.sqrt(
+        (1 - y) ** 2 + (1 - z) ** 2 + (-x - 1) ** 2) + c6 * (1 - y) / ca.sqrt(
+        (1 - y) ** 2 + (-x - 1) ** 2 + (-z - 1) ** 2) + c7 * (-y - 1) / ca.sqrt(
+        (1 - z) ** 2 + (-x - 1) ** 2 + (-y - 1) ** 2) + c8 * (-y - 1) / ca.sqrt(
+        (-x - 1) ** 2 + (-y - 1) ** 2 + (-z - 1) ** 2))
+    model.set_rhs('z_dot', c1 * (1 - z) / ca.sqrt((1 - x) ** 2 + (1 - y) ** 2 + (1 - z) ** 2) + c2 * (-z - 1) / ca.sqrt(
+        (1 - x) ** 2 + (1 - y) ** 2 + (-z - 1) ** 2) + c3 * (1 - z) / ca.sqrt(
+        (1 - x) ** 2 + (1 - z) ** 2 + (-y - 1) ** 2) + c4 * (-z - 1) / ca.sqrt(
+        (1 - x) ** 2 + (-y - 1) ** 2 + (-z - 1) ** 2) + c5 * (1 - z) / ca.sqrt(
+        (1 - y) ** 2 + (1 - z) ** 2 + (-x - 1) ** 2) + c6 * (-z - 1) / ca.sqrt(
+        (1 - y) ** 2 + (-x - 1) ** 2 + (-z - 1) ** 2) + c7 * (1 - z) / ca.sqrt(
+        (1 - z) ** 2 + (-x - 1) ** 2 + (-y - 1) ** 2) + c8 * (-z - 1) / ca.sqrt(
+        (-x - 1) ** 2 + (-y - 1) ** 2 + (-z - 1) ** 2) - 9.81)
+
+    model.setup()
+
+    mpc = mpclib.do_mpc.controller.MPC(model)
+
+    # Setup Controller
+    setup_mpc = {
+        'n_horizon': horizon,
+        't_step': dt,
+        'store_full_solution': True,
+    }
+    mpc.set_param(**setup_mpc)
+
+    # mterm = (x - x_ref) ** 2 + (y - y_ref) ** 2 + (z - z_ref) ** 2 + (x_dot - x_dot_ref) ** 2 + (y_dot - y_dot_ref) ** 2 + (z_dot - z_dot_ref) ** 2
+    # ltermu = (c1-c1_opt) ** 2 + (c2-c2_opt) ** 2 + (c3-c3_opt) ** 2 + (c4-c4_opt) ** 2 + (c5-c5_opt) ** 2 + (c6-c6_opt) ** 2 + (c7-c7_opt) ** 2 + (c8-c8_opt) ** 2
+    # #mterm = mtermu + mtermx
+    # ltermx = (x - x_ref) ** 2 + (y - y_ref) ** 2 + (z - z_ref) ** 2 + (x_dot - x_dot_ref) ** 2 + (y_dot - y_dot_ref) ** 2 + (z_dot - z_dot_ref) ** 2
+    # lterm =  ltermx
+
+    mterm = (x - x_ref) ** 2 + (y - y_ref) ** 2 + (z - z_ref) ** 2
+    lterm = (x - x_ref) ** 2 + (y - y_ref) ** 2 + (z - z_ref) ** 2
+    r = 0.01
+    mpc.set_objective(mterm=mterm, lterm=lterm)
+    mpc.set_rterm(c1=r, c2=r, c3=r, c4=r, c5=r, c6=r, c7=r, c8=r)
+
+    # define the reference
+    tvp_template = mpc.get_tvp_template()
+
+    mpc.set_tvp_fun(tvp_fun)
+
+    lowerx = -1
+    upperx = 1
+    lowerdot = -10
+    upperdot = 10
+    loweru = 0
+    upperu = 10
+
+    # Set constraints
+    # Lower bounds on states
+    mpc.bounds['lower', '_x', 'x'] = lowerx
+    mpc.bounds['lower', '_x', 'y'] = lowerx
+    mpc.bounds['lower', '_x', 'z'] = lowerx
+    mpc.bounds['lower', '_x', 'x_dot'] = lowerdot
+    mpc.bounds['lower', '_x', 'y_dot'] = lowerdot
+    mpc.bounds['lower', '_x', 'z_dot'] = lowerdot
+    # Upper bounds on states
+    mpc.bounds['upper', '_x', 'x'] = upperx
+    mpc.bounds['upper', '_x', 'y'] = upperx
+    mpc.bounds['upper', '_x', 'z'] = upperx
+    mpc.bounds['upper', '_x', 'x_dot'] = upperdot
+    mpc.bounds['upper', '_x', 'y_dot'] = upperdot
+    mpc.bounds['upper', '_x', 'z_dot'] = upperdot
+
+    # Lower bounds on inputs:
+    mpc.bounds['lower', '_u', 'c1'] = loweru
+    mpc.bounds['lower', '_u', 'c2'] = loweru
+    mpc.bounds['lower', '_u', 'c3'] = loweru
+    mpc.bounds['lower', '_u', 'c4'] = loweru
+    mpc.bounds['lower', '_u', 'c5'] = loweru
+    mpc.bounds['lower', '_u', 'c6'] = loweru
+    mpc.bounds['lower', '_u', 'c7'] = loweru
+    mpc.bounds['lower', '_u', 'c8'] = loweru
+    # Lower bounds on inputs:
+    mpc.bounds['upper', '_u', 'c1'] = upperu
+    mpc.bounds['upper', '_u', 'c2'] = upperu
+    mpc.bounds['upper', '_u', 'c3'] = upperu
+    mpc.bounds['upper', '_u', 'c4'] = upperu
+    mpc.bounds['upper', '_u', 'c5'] = upperu
+    mpc.bounds['upper', '_u', 'c6'] = upperu
+    mpc.bounds['upper', '_u', 'c7'] = upperu
+    mpc.bounds['upper', '_u', 'c8'] = upperu
+
+    mpc.setup()
+    return mpc, model
 
 
-#Setup Controller
-setup_mpc = {
-    'n_horizon': 20,
-    't_step': 0.1,
-    'store_full_solution': True,
-}
-mpc.set_param(**setup_mpc)
+n_horizon = 20
+dt = 0.1
 
-mterm = (x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2
-lterm = (x-x_ref)**2 + (y-y_ref)**2 + (z-z_ref)**2
-
-r = 0.01
-mpc.set_objective(mterm=mterm, lterm=lterm)
-mpc.set_rterm(c1=r, c2=r, c3=r, c4=r, c5=r, c6=r, c7=r, c8=r)
-
-# define the reference
-tvp_template = mpc.get_tvp_template()
-
-def tvp_fun(tnow):
-    n_horizon = 20
-    for k in range(n_horizon + 1):
-        tvp_template['_tvp', k, 'x_ref'] = -np.cos(tnow*0.5)
-        tvp_template['_tvp', k, 'y_ref'] = -np.sin(tnow*0.5)
-        tvp_template['_tvp', k, 'z_ref'] = -0.5
-    return tvp_template
+mpc, model = InitMPC(n_horizon, dt)
 
 def tvp_fun_sim(tnow):
     tvp_template_sim['x_ref'] = -0.5
@@ -74,55 +180,9 @@ def tvp_fun_sim(tnow):
     tvp_template_sim['z_ref'] = -0.5
     return tvp_template_sim
 
-mpc.set_tvp_fun(tvp_fun)
-
-lowerx = -1
-upperx = 1
-lowerdot = -1
-upperdot = 1
-loweru = 0
-upperu = 10
-
-# Set constraints
-# Lower bounds on states
-mpc.bounds['lower','_x', 'x'] = lowerx
-mpc.bounds['lower','_x', 'y'] = lowerx
-mpc.bounds['lower','_x', 'z'] = lowerx
-mpc.bounds['lower','_x', 'x_dot'] = lowerdot
-mpc.bounds['lower','_x', 'y_dot'] = lowerdot
-mpc.bounds['lower','_x', 'z_dot'] = lowerdot
-# Upper bounds on states
-mpc.bounds['upper','_x', 'x'] = upperx
-mpc.bounds['upper','_x', 'y'] = upperx
-mpc.bounds['upper','_x', 'z'] = upperx
-mpc.bounds['upper','_x', 'x_dot'] = upperdot
-mpc.bounds['upper','_x', 'y_dot'] = upperdot
-mpc.bounds['upper','_x', 'z_dot'] = upperdot
-
-# Lower bounds on inputs:
-mpc.bounds['lower','_u', 'c1'] = loweru
-mpc.bounds['lower','_u', 'c2'] = loweru
-mpc.bounds['lower','_u', 'c3'] = loweru
-mpc.bounds['lower','_u', 'c4'] = loweru
-mpc.bounds['lower','_u', 'c5'] = loweru
-mpc.bounds['lower','_u', 'c6'] = loweru
-mpc.bounds['lower','_u', 'c7'] = loweru
-mpc.bounds['lower','_u', 'c8'] = loweru
-# Lower bounds on inputs:
-mpc.bounds['upper','_u', 'c1'] = upperu
-mpc.bounds['upper','_u', 'c2'] = upperu
-mpc.bounds['upper','_u', 'c3'] = upperu
-mpc.bounds['upper','_u', 'c4'] = upperu
-mpc.bounds['upper','_u', 'c5'] = upperu
-mpc.bounds['upper','_u', 'c6'] = upperu
-mpc.bounds['upper','_u', 'c7'] = upperu
-mpc.bounds['upper','_u', 'c8'] = upperu
-
-mpc.setup()
-
 # Setup the simulator
 simulator = mpclib.do_mpc.simulator.Simulator(model)
-simulator.set_param(t_step = 0.1)
+simulator.set_param(t_step = dt)
 tvp_template_sim = simulator.get_tvp_template()
 simulator.set_tvp_fun(tvp_fun_sim)
 simulator.setup()
@@ -188,7 +248,9 @@ mpc.reset_history()
 
 for i in range(200):
     u0 = mpc.make_step(x0)
-    x0 = simulator.make_step(u0)
+    disturbance = np.random.normal(0.0, 0.01, size=6)
+    x0 = simulator.make_step(u0)[0] + disturbance
+    print(disturbance)
 
 # Plot predictions from t=0
 mpc_graphics.plot_predictions(t_ind=0)
@@ -196,3 +258,5 @@ mpc_graphics.plot_predictions(t_ind=0)
 sim_graphics.plot_results()
 sim_graphics.reset_axes()
 plt.show()
+
+

@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 
 
 def VisualizeTrajectory3D(x, y ,z ):
-    print(x)
     ax = plt.figure().add_subplot(projection='3d')
     ax.plot(x, y, z, label='parametric curve')
     ax.legend()
@@ -26,4 +25,11 @@ def VisualizeStateProgressionMultipleSims(Sims, t, handles=None):
             labels.append(str(n))
     if handles:
         fig.legend(handles, labels, loc='upper center')
+    plt.show()
+
+def VisualizeInputs(U, t):
+    fig, axs = plt.subplots(8,1)
+    fig.suptitle('Vertically stacked subplots')
+    for ax, input_n in zip(axs, U):
+        ax.plot(t, input_n)
     plt.show()

@@ -140,5 +140,6 @@ class StateSpaceModel:
         self.dt_statespace = sp.signal.cont2discrete((self.A, self.B, self.C, self.D), self.dt)
         self.Phi = self.dt_statespace[0]
         self.Gamma = self.dt_statespace[1]
+
     def ResetState(self, state):
         self.state = state
