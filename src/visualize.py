@@ -13,6 +13,8 @@ def VisualizeStateProgression(states, t):
     fig.suptitle('Vertically stacked subplots')
     for ax, state in zip(axs, states):
         ax.plot(t, state)
+        ax.set_ylim(bottom=-1.0, top=1.0)
+        ax.grid()
     plt.show()
 
 def VisualizeStateProgressionMultipleSims(Sims, t, handles=None):
