@@ -31,7 +31,7 @@ def VisualizeStateProgressionMultipleSims(Sims, t, handles=None):
 
 def VisualizeInputs(U, t):
     fig, axs = plt.subplots(8,1)
-    fig.suptitle('Vertically stacked subplots')
+    fig.suptitle('Inputs')
     for ax, input_n in zip(axs, U):
         ax.plot(t, input_n)
     plt.show()

@@ -8,14 +8,14 @@ import matplotlib as mpl
 def InitMPC(horizon, dt):
     def tvp_fun(tnow):
         n_horizon = 20
-        dt = 0.1
+
         for k in range(n_horizon + 1):
-            tvp_template['_tvp', k, 'x_ref'] = -np.cos(tnow * 0.5)*0.8
-            tvp_template['_tvp', k, 'y_ref'] = -np.sin(tnow * 0.5)*0.8
-            tvp_template['_tvp', k, 'z_ref'] = -0.5
-            tvp_template['_tvp', k, 'x_dot_ref'] = 0.5*np.sin(tnow * 0.5)*0.8
-            tvp_template['_tvp', k, 'y_dot_ref'] = -0.5*np.cos(tnow * 0.5)*0.8
-            tvp_template['_tvp', k, 'z_dot_ref'] = 0
+            tvp_template['_tvp', k, 'x_ref'] = 0#-np.cos(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'y_ref'] = 0#-np.sin(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'z_ref'] = 0#-0.5
+            tvp_template['_tvp', k, 'x_dot_ref'] = 0#0.5*np.sin(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'y_dot_ref'] = 0#-0.5*np.cos(tnow * 0.5)*0.8
+            tvp_template['_tvp', k, 'z_dot_ref'] = 0#0
 
             tvp_template['_tvp', k, 'c1_opt'] = 0
             tvp_template['_tvp', k, 'c1_opt'] = 0
@@ -128,7 +128,7 @@ def InitMPC(horizon, dt):
     lowerdot = -10
     upperdot = 10
     loweru = 0
-    upperu = 10
+    upperu = 100
 
     # Set constraints
     # Lower bounds on states
@@ -168,7 +168,6 @@ def InitMPC(horizon, dt):
     mpc.setup()
     return mpc, model
 
-
 n_horizon = 20
 dt = 0.1
 
@@ -188,7 +187,7 @@ simulator.set_tvp_fun(tvp_fun_sim)
 simulator.setup()
 
 #Make a simulation
-x0 = 0.5*np.array([1, 1, 1, 1, -1, 1]).reshape(-1, 1)
+x0 = 0.5*np.array([1, 1, 1, 1, 1, 1]).reshape(-1, 1)
 simulator.x0 = x0
 mpc.x0 = x0
 mpc.set_initial_guess()
@@ -246,11 +245,11 @@ simulator.reset_history()
 simulator.x0 = x0
 mpc.reset_history()
 
-for i in range(200):
+for i in range(20):
     u0 = mpc.make_step(x0)
-    disturbance = np.random.normal(0.0, 0.01, size=6)
-    x0 = simulator.make_step(u0)[0] + disturbance
-    print(disturbance)
+    # disturbance = np.random.normal(0.0, 0.01, size=6)
+    x0 = simulator.make_step(u0)
+    # print(disturbance)
 
 # Plot predictions from t=0
 mpc_graphics.plot_predictions(t_ind=0)
