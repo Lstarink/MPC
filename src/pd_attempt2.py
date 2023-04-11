@@ -20,7 +20,6 @@ class PDXYZ:
             # f_xyz[n] = self.controllers[n].Tick(e_n)
             f_xyz[n] = self.kp*e_n + self.kd*error_vel[n]
 
-        print(f_xyz)
         tau = PDXYZ.F_xyz_To_tau(self, f_xyz, location)
         return tau
 
@@ -45,7 +44,5 @@ class PDXYZ:
                            A_eq @ u == b_eq])  # quadratic programming
         prob.solve()
         tau_quadprog = u.value
-
-        print(A_eq@tau_quadprog)
         return(tau_quadprog)
 

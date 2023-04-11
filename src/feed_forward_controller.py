@@ -39,7 +39,6 @@ class FeedForwardController:
 
         tau_ = sp.optimize.linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=[bound, bound, bound, bound])
         tau = tau_.x
-        print(tau_)
         for tau_n in tau:
             assert(tau_n >= 0)
 

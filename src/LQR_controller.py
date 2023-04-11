@@ -11,6 +11,7 @@ class LQR:
         LQR.DARE(self)
 
         self.Rinv = sp.linalg.inv(R)
+
     def DARE(self):
         self.P = sp.linalg.solve_discrete_are(self.A, self.B, self.Q, self.R)
 
