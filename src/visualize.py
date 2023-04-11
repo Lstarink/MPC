@@ -24,28 +24,30 @@ def VisualizeStateProgression(states, t, Title):
         ax_counter+=1
     plt.show()
 
-def VisualizeStateProgressionMultipleSims(Sims, t, handles=None):
+def VisualizeStateProgressionMultipleSims(Sims, t, lim=None, handles=None):
     fig, axs = plt.subplots(6,1)
-    fig.suptitle('Vertically stacked subplots')
     labels = []
+
     for states in Sims:
         for n, state in enumerate(states):
-            axs[n].step(t, state, label=str(n))
-            labels.append(str(n))
+            l,= axs[n].step(t, state, label=str(n))
+            if n == 1:
+                labels.append(l)
 
     ax_counter = 0
     for ax in axs:
+        if lim:
+            ax.set_ylim(bottom=-lim, top=lim)
         ax.grid()
         ax.set_xlabel("time [s]")
         ax.set_ylabel("state " + str(ax_counter + 1))
         ax_counter += 1
-    if handles:
-        fig.legend(handles, labels, loc='upper center')
+        if (ax_counter == 1) and handles:
+            ax.legend(labels, handles, loc='upper right')
     plt.show()
 
 def VisualizeInputs(U, t):
     fig, axs = plt.subplots(8,1)
-    fig.suptitle('Inputs')
     ax_counter = 0
     for ax, input_n in zip(axs, U):
         ax.step(t, input_n)

@@ -28,7 +28,7 @@ x_eq = np.zeros(6)
 statespace.Linearize(u_eq=u_eq, x_eq=x_eq)
 
 reference = np.array([0.0, 0.0, 0.0])
-t = np.arange(0, 1.0, dt)
+t = np.arange(0, .8, dt)
 
 state = state0
 x = np.zeros(t.shape)
@@ -39,6 +39,7 @@ estimated_state_vector = np.zeros([6, len(t)])
 input_vector = np.zeros([8, len(t)])
 estimation_error = np.zeros([6, len(t)])
 estimated_disturbance_vector = np.zeros([6, len(t)])
+true_disturbance = np.zeros([6, len(t)])
 
 
 ff_controller = feed_forward_controller.FeedForwardController(pretension)
@@ -47,7 +48,7 @@ fb_controller = pd_attempt2.PDXYZ(kp, ki, kd, dt)
 poles = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.17, 0.18, 0.19, 0.15, 0.16, 0.14])*5
 
-disturbance = np.array([0.00, 0.05, 0.00, 0.0, 0.0, 0.0])
+disturbance = np.array([0.00, 0.1, 0.00, 0.0, 0.0, 0.0])
 
 estimated_state = state0
 estimated_disturbance = disturbance
@@ -69,6 +70,7 @@ for n in tqdm.tqdm(range(len(t))):
     state_vector[:, n] = state
     estimation_error[:, n] = state-estimated_state
     estimated_disturbance_vector[:, n] = estimated_disturbance
+    true_disturbance[:, n] = disturbance
     x[n] = state[0]
     y[n] = state[1]
     z[n] = state[2]
@@ -94,13 +96,14 @@ error_vector_lin = np.zeros([8, len(t)])
 #     z_lin[n] = state[2]
 
 # visualize.VisualizeInputs(error_vector, t)
-visualize.VisualizeStateProgression(state_vector, t, "State progression")
-visualize.VisualizeStateProgression(estimated_state_vector, t, "Estimated state progression")
-visualize.VisualizeStateProgression(estimation_error, t, "Estimation error")
-visualize.VisualizeStateProgression(estimated_disturbance_vector, t, "Estimated disturbance")
+# visualize.VisualizeStateProgression(state_vector, t, "State progression")
+# visualize.VisualizeStateProgression(estimated_state_vector, t, "Estimated state progression")
+# visualize.VisualizeStateProgression(estimation_error, t, "Estimation error")
+# visualize.VisualizeStateProgression(estimated_disturbance_vector, t, "Estimated disturbance")
 
 # visualize.VisualizeStateProgression(state_vector_lin, t)
 
 visualize.VisualizeInputs(input_vector, t)
 
-visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_vector, estimation_error], t, handles=["1", "2", "3"])
+visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_vector], t, handles=["State", "Estimated state"])
+visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])

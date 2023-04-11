@@ -6,6 +6,8 @@ import matplotlib as mpl
 import nonlinear_state_space_model as nlss
 import math as mt
 import visualize
+import tqdm
+import Observer
 
 
 def InitMPC(horizon, dt):
@@ -74,76 +76,59 @@ def InitMPC(horizon, dt):
     return mpc, model
 
 n_horizon = 20
-dt = 0.1
+dt = 0.01
 
 mpc, model = InitMPC(n_horizon, dt)
 
-def tvp_fun_sim(tnow):
-    tvp_template_sim['state_vector_ref'] = np.zeros(6)
-    return tvp_template_sim
+statespace = nlss.StateSpaceModel(dt=dt)
 
-# Setup the simulator
-simulator = mpclib.do_mpc.simulator.Simulator(model)
-simulator.set_param(t_step = dt)
-tvp_template_sim = simulator.get_tvp_template()
-simulator.set_tvp_fun(tvp_fun_sim)
-simulator.setup()
+state0 = np.ones(6)*0.5
+statespace.ResetState(state0)
 
-#Make a simulation
-x0 = 0.9*np.array([1, 1, 1, 1, 1, 1]).reshape(-1, 1)
-simulator.x0 = x0
-mpc.x0 = x0
-mpc.set_initial_guess()
-
-mpl.rcParams['font.size'] = 18
-mpl.rcParams['lines.linewidth'] = 3
-mpl.rcParams['axes.grid'] = True
-
-mpc_graphics = mpclib.do_mpc.graphics.Graphics(mpc.data)
-sim_graphics = mpclib.do_mpc.graphics.Graphics(simulator.data)
-
-fig, ax = plt.subplots(2, sharex=True, figsize=(16,9))
-fig.align_ylabels()
-
-for g in [sim_graphics, mpc_graphics]:
-    g.add_line(var_type='_x', var_name='state_vector', axis=ax[0])
-    g.add_line(var_type='_u', var_name='input_vector', axis=ax[1])
-
-ax[0].set_ylabel('angle position [rad]')
-ax[1].set_ylabel('motor angle [rad]')
-ax[1].set_xlabel('time [s]')
-
-sim_graphics.reset_axes()
-
-# Reset and do the control loop
-simulator.reset_history()
-simulator.x0 = x0
-mpc.reset_history()
-
-f_eq = 3 * 9.81 / (4 * mt.sqrt(3))
+f_eq = 3*9.81 / (4 * mt.sqrt(3))
 u_eq = np.array([f_eq, 0, f_eq, 0, f_eq, 0, f_eq, 0])
-nl_model = nlss.StateSpaceModel(dt=dt)
-nl_model.ResetState(x0)
-t = np.arange(0, 4, dt)
-x_vec_lin = np.zeros([6,len(t)])
+x_eq = np.zeros(6)
+statespace.Linearize(u_eq=u_eq, x_eq=x_eq)
 
-for i in range(len(t)):
-    u0 = mpc.make_step(x0)
-    x_vec_lin[:, i] = x0[:, 0]
-    x0 = simulator.make_step(u0)
+reference = np.array([0.0, 0.0, 0.0])
+t = np.arange(0, .8, dt)
 
-# mpc_graphics.plot_predictions(t_ind=0)
-# sim_graphics.plot_results()
-# sim_graphics.reset_axes()
-# plt.show()
-x0 = 0.9*np.array([1, 1, 1, 1, 1, 1]).reshape(-1, 1)
-x_vec = np.zeros([6,len(t)])
-nl_model.ResetState(x0)
+state = state0
+state_vector = np.zeros([6, len(t)])
+estimated_state_vector = np.zeros([6, len(t)])
+input_vector = np.zeros([8, len(t)])
+estimation_error = np.zeros([6, len(t)])
+estimated_disturbance_vector = np.zeros([6, len(t)])
+true_disturbance = np.zeros([6, len(t)])
 
-for i in range(len(t)):
-    u0 = mpc.make_step(x0)
-    x_vec[:, i] = x0[:, 0]
-    print(x0[:,0])
-    x0 = nl_model.nl_tick(u0[:,0]+u_eq, x0[:,0]).reshape(-1, 1)
+poles = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                  0.17, 0.18, 0.19, 0.15, 0.16, 0.14])*5
 
-visualize.VisualizeStateProgressionMultipleSims([x_vec, x_vec_lin], t)
+disturbance = np.array([0.00, 0.1, 0.00, 0.0, 0.0, 0.0])
+
+estimated_state = state0
+estimated_disturbance = disturbance
+
+observer = Observer.Observer(dt, u_eq, x_eq, poles)
+observer.InitState(state0, estimated_disturbance)
+statespace.ResetState(state0)
+
+mpc.x0 = state0
+mpc.set_initial_guess()
+for n in tqdm.tqdm(range(len(t))):
+    tau = mpc.make_step(state)
+    tau = tau[:, 0]
+    input_vector[:, n] = tau
+    state = statespace.nl_tick(tau, state)
+    estimated_state, estimated_disturbance = observer.Tick(state+disturbance, tau)
+    estimated_state = statespace.nl_tick(tau, estimated_state)
+    estimated_state = estimated_state-estimated_disturbance
+    estimated_state_vector[:, n] = estimated_state
+    state_vector[:, n] = state
+    estimation_error[:, n] = state-estimated_state
+    estimated_disturbance_vector[:, n] = estimated_disturbance
+    true_disturbance[:, n] = disturbance
+
+visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_vector], t, handles=["State", "Estimated state"])
+visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
+visualize.VisualizeInputs(input_vector, t)
