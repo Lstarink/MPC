@@ -121,7 +121,7 @@ for n in tqdm.tqdm(range(len(t))):
     input_vector[:, n] = tau
     state = statespace.nl_tick(tau, state)
     estimated_state, estimated_disturbance = observer.Tick(state+disturbance, tau)
-    estimated_state = statespace.nl_tick(tau, estimated_state)
+    # estimated_state = statespace.nl_tick(tau, estimated_state)
     estimated_state = estimated_state-estimated_disturbance
     estimated_state_vector[:, n] = estimated_state
     state_vector[:, n] = state

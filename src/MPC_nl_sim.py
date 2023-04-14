@@ -113,8 +113,8 @@ def InitMPC(horizon, dt):
     b = 0.0
     mterm = a*((x) ** 2 + (y) ** 2 + (z) ** 2) + b*((x_dot) ** 2 + (y_dot) ** 2 + (z_dot) ** 2)
     lterm = a*((x) ** 2 + (y) ** 2 + (z) ** 2) + b*((x_dot) ** 2 + (y_dot) ** 2 + (z_dot) ** 2)
-    r = 0.001
-    mpc.set_objective(mterm=mterm, lterm=lterm)
+    r = 0.1
+    mpc.set_objective(mterm=mterm, lterm=0.5*lterm)
     mpc.set_rterm(c1=r, c2=r, c3=r, c4=r, c5=r, c6=r, c7=r, c8=r)
 
     # define the reference
@@ -183,7 +183,7 @@ x_eq = np.zeros(6)
 statespace.Linearize(u_eq=u_eq, x_eq=x_eq)
 
 reference = np.array([0.0, 0.0, 0.0])
-t = np.arange(0, .8, dt)
+t = np.arange(0, 5.0, dt)
 
 state = state0
 state_vector = np.zeros([6, len(t)])
@@ -195,7 +195,8 @@ true_disturbance = np.zeros([6, len(t)])
 
 poles = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                   0.17, 0.18, 0.19, 0.15, 0.16, 0.14])*5
-
+# poles = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+#                   0.95, 0.95, 0.95, 0.95, 0.95, 0.95])*0.2
 disturbance = np.array([0.00, 0.1, 0.00, 0.0, 0.0, 0.0])
 
 estimated_state = state0
@@ -208,12 +209,11 @@ statespace.ResetState(state0)
 mpc.x0 = state0
 mpc.set_initial_guess()
 for n in tqdm.tqdm(range(len(t))):
-    tau = mpc.make_step(state+np.array([0, np.random.normal(0.0, 0.01), 0, 0, 0, 0]))
+    tau = mpc.make_step(estimated_state)
     tau = tau[:, 0]
     input_vector[:, n] = tau
     state = statespace.nl_tick(tau-u_eq, state)
     estimated_state, estimated_disturbance = observer.Tick(state+disturbance, tau-u_eq)
-    estimated_state = statespace.nl_tick(tau, estimated_state)
     estimated_state = estimated_state-estimated_disturbance
     estimated_state_vector[:, n] = estimated_state
     state_vector[:, n] = state
@@ -224,6 +224,9 @@ for n in tqdm.tqdm(range(len(t))):
 visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_vector], t, handles=["State", "Estimated state"])
 visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
 visualize.VisualizeInputs(input_vector, t)
+
+np.save("state_mpc_n30.npy", state_vector)
+np.save("input_mpc_n30.npy", input_vector)
 
 # def tvp_fun_sim(tnow):
 #     tvp_template_sim['x_ref'] = -0.5

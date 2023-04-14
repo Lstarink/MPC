@@ -8,7 +8,7 @@ import saturate
 import Observer
 
 dt = 0.01
-t = np.arange(0.0, 0.8, dt)
+t = np.arange(0.0, 5.0, dt)
 
 model = nonlinear_state_space_model.StateSpaceModel(dt=dt)
 
@@ -80,6 +80,8 @@ visualize.VisualizeStateProgressionMultipleSims([estimated_state_vector, ynl], t
 visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
 visualize.VisualizeInputs(u_vector, t)
 
+np.save("state_lqr.npy", ynl)
+np.save("input_lqr.npy", u_vector)
 #
 # def LQR_sim():
 #     return 0

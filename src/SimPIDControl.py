@@ -28,7 +28,7 @@ x_eq = np.zeros(6)
 statespace.Linearize(u_eq=u_eq, x_eq=x_eq)
 
 reference = np.array([0.0, 0.0, 0.0])
-t = np.arange(0, .8, dt)
+t = np.arange(0, 5.0, dt)
 
 state = state0
 x = np.zeros(t.shape)
@@ -107,3 +107,7 @@ visualize.VisualizeInputs(input_vector, t)
 
 visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_vector], t, handles=["State", "Estimated state"])
 visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
+
+
+np.save("state_pd.npy", state_vector)
+np.save("input_pd.npy", input_vector)
