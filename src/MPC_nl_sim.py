@@ -9,7 +9,7 @@ import math as mt
 
 def InitMPC(horizon, dt):
     def tvp_fun(tnow):
-        n_horizon = 30
+        n_horizon = 50
 
         for k in range(n_horizon + 1):
             tvp_template['_tvp', k, 'x_ref'] = 0#-np.cos(tnow * 0.5)*0.8
@@ -168,7 +168,7 @@ def InitMPC(horizon, dt):
     return mpc, model
 
 
-n_horizon = 30
+n_horizon = 50
 dt = 0.01
 
 mpc, model = InitMPC(n_horizon, dt)
@@ -209,7 +209,7 @@ statespace.ResetState(state0)
 mpc.x0 = state0
 mpc.set_initial_guess()
 for n in tqdm.tqdm(range(len(t))):
-    tau = mpc.make_step(estimated_state)
+    tau = mpc.make_step(state)
     tau = tau[:, 0]
     input_vector[:, n] = tau
     state = statespace.nl_tick(tau-u_eq, state)
@@ -225,8 +225,8 @@ visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_v
 visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
 visualize.VisualizeInputs(input_vector, t)
 
-np.save("state_mpc_n30.npy", state_vector)
-np.save("input_mpc_n30.npy", input_vector)
+np.save("state_mpc_n50_true.npy", state_vector)
+np.save("input_mpc_n50_true.npy", input_vector)
 
 # def tvp_fun_sim(tnow):
 #     tvp_template_sim['x_ref'] = -0.5

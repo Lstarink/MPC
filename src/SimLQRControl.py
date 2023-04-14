@@ -58,7 +58,7 @@ estimated_disturbance_vector= np.zeros([6, len(t)])
 true_disturbance= np.zeros([6, len(t)])
 
 for n, tn in enumerate(t):
-    unnl = controller.Tick(estimated_state)
+    unnl = controller.Tick(xplus_nl)
     unnl = saturate.Saturate(unnl, -u_eq, 100)
     u_vector[:, n] = unnl+u_eq
     xplus_nl = model.nl_tick(unnl, xplus_nl)
@@ -80,8 +80,8 @@ visualize.VisualizeStateProgressionMultipleSims([estimated_state_vector, ynl], t
 visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
 visualize.VisualizeInputs(u_vector, t)
 
-np.save("state_lqr.npy", ynl)
-np.save("input_lqr.npy", u_vector)
+np.save("state_lqr_true.npy", ynl)
+np.save("input_lqr_true.npy", u_vector)
 #
 # def LQR_sim():
 #     return 0

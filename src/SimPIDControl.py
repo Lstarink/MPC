@@ -59,8 +59,8 @@ statespace.ResetState(state0)
 
 
 for n in tqdm.tqdm(range(len(t))):
-    tau_fb = fb_controller.Tick(reference, estimated_state)
-    tau_ff = ff_controller.TickQuadProg(estimated_state[0:3])
+    tau_fb = fb_controller.Tick(reference, state)
+    tau_ff = ff_controller.TickQuadProg(state[0:3])
     tau = tau_ff + tau_fb - u_eq
     input_vector[:, n] = tau + u_eq
     state = statespace.nl_tick(tau, state)
@@ -109,5 +109,5 @@ visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_v
 visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
 
 
-np.save("state_pd.npy", state_vector)
-np.save("input_pd.npy", input_vector)
+np.save("state_pd_true.npy", state_vector)
+np.save("input_pd_true.npy", input_vector)

@@ -23,7 +23,7 @@ class Observer:
                     PhiAppend[i, j] = self.Phi[i,j]
 
         # PhiAppend[6, 6] = 1
-        PhiAppend[7, 7] = 1
+        PhiAppend[7, 7] = 0
         # PhiAppend[8, 8] = 1
 
         print(PhiAppend)

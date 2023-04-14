@@ -12,7 +12,7 @@ import Observer
 
 def InitMPC(horizon, dt):
     def tvp_fun(tnow):
-        n_horizon = 20
+        n_horizon = 10
         for k in range(n_horizon + 1):
             tvp_template['_tvp', k, 'state_vector_ref'] = np.zeros(6)
         return tvp_template
@@ -47,7 +47,14 @@ def InitMPC(horizon, dt):
     }
     mpc.set_param(**setup_mpc)
 
-    Q = np.identity(6)
+    q1 = 5000
+    q2 = 10
+    Q = np.array([[q1, 0, 0, 0, 0, 0],
+                  [0, q1, 0, 0, 0, 0],
+                  [0, 0, q1, 0, 0, 0],
+                  [0, 0, 0, q2, 0, 0],
+                  [0, 0, 0, 0, q2, 0],
+                  [0, 0, 0, 0, 0, q2]])
     m_term = (state_vector).T @ Q @ (state_vector)
     l_term = (state_vector).T @ Q @ (state_vector)
     R = np.identity(8)
@@ -70,12 +77,12 @@ def InitMPC(horizon, dt):
     mpc.bounds['lower', '_x', 'state_vector'] = np.array([lowerx, lowerx, lowerx, lowerdot, lowerdot, lowerdot])
     mpc.bounds['upper', '_x', 'state_vector'] = np.array([upperx, upperx, upperx, upperdot, upperdot, upperdot])
     mpc.bounds['lower', '_u', 'input_vector'] = loweru*np.ones(8) - u_eq
-    mpc.bounds['upper', '_u', 'input_vector'] = upperu*np.ones(8) - u_eq
+    mpc.bounds['upper', '_u', 'input_vector'] = upperu*np.ones(8)
 
     mpc.setup()
     return mpc, model
 
-n_horizon = 20
+n_horizon = 10
 dt = 0.01
 
 mpc, model = InitMPC(n_horizon, dt)
@@ -91,7 +98,7 @@ x_eq = np.zeros(6)
 statespace.Linearize(u_eq=u_eq, x_eq=x_eq)
 
 reference = np.array([0.0, 0.0, 0.0])
-t = np.arange(0, .8, dt)
+t = np.arange(0, 2.0, dt)
 
 state = state0
 state_vector = np.zeros([6, len(t)])
@@ -102,9 +109,9 @@ estimated_disturbance_vector = np.zeros([6, len(t)])
 true_disturbance = np.zeros([6, len(t)])
 
 poles = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                  0.17, 0.18, 0.19, 0.15, 0.16, 0.14])*5
+                  0.17, 0.14, 0.19, 0.15, 0.16, 0.14])*5
 
-disturbance = np.array([0.00, 0.1, 0.00, 0.0, 0.0, 0.0])
+disturbance = np.array([0.00, 0.0, 0.00, 0.0, 0.0, 0.0])
 
 estimated_state = state0
 estimated_disturbance = disturbance
@@ -118,9 +125,10 @@ mpc.set_initial_guess()
 for n in tqdm.tqdm(range(len(t))):
     tau = mpc.make_step(state)
     tau = tau[:, 0]
-    input_vector[:, n] = tau
-    state = statespace.nl_tick(tau, state)
+    input_vector[:, n] = tau+u_eq
     estimated_state, estimated_disturbance = observer.Tick(state+disturbance, tau)
+
+    state = statespace.nl_tick(tau, state)
     # estimated_state = statespace.nl_tick(tau, estimated_state)
     estimated_state = estimated_state-estimated_disturbance
     estimated_state_vector[:, n] = estimated_state
@@ -129,6 +137,8 @@ for n in tqdm.tqdm(range(len(t))):
     estimated_disturbance_vector[:, n] = estimated_disturbance
     true_disturbance[:, n] = disturbance
 
+np.save("state_mpclin_10_true.npy", state_vector)
+np.save("input_mpclin_10_true.npy", input_vector)
 visualize.VisualizeStateProgressionMultipleSims([state_vector, estimated_state_vector], t, handles=["State", "Estimated state"])
 visualize.VisualizeStateProgressionMultipleSims([true_disturbance, estimated_disturbance_vector], t, lim=0.5, handles=["True disturbance", "Estimated disturbance"])
 visualize.VisualizeInputs(input_vector, t)
